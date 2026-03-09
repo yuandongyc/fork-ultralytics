@@ -104,46 +104,52 @@ jobs:
         if: inputs.verify == 'true'
         run: |
           python -c "
-          from ultralytics import YOLO
-          from pathlib import Path
-          
-          model_file = '${{ inputs.model }}.onnx'
-          if not Path(model_file).exists():
-              raise FileNotFoundError(f'Model file {model_file} not found!')
-          
-          model = YOLO(model_file)
-          results = model('ultralytics/assets/zidane.jpg')
-          print(f'ONNX model {model_file} verified successfully!')
-          "
+from ultralytics import YOLO
+from pathlib import Path
+
+model_file = '${{ inputs.model }}.onnx'
+if not Path(model_file).exists():
+    raise FileNotFoundError(f'Model file {model_file} not found!')
+
+model = YOLO(model_file)
+results = model('ultralytics/assets/zidane.jpg')
+print(f'ONNX model {model_file} verified successfully!')
+"
 
       - name: Get model info
         run: |
-          python -c "
-          from pathlib import Path
-          import json
-          
-          model_file = '${{ inputs.model }}.onnx'
-          if Path(model_file).exists():
-              file_size_mb = Path(model_file).stat().st_size / (1024 * 1024)
-              
-              info = {
-                  'model': '${{ inputs.model }}',
-                  'format': 'onnx',
-                  'file_size_mb': round(file_size_mb, 2),
-                  'imgsz': '${{ inputs.imgsz }}',
-                  'dynamic': ${{ inputs.dynamic }},
-                  'simplify': ${{ inputs.simplify }},
-                  'half': ${{ inputs.half }},
-                  'nms': ${{ inputs.nms }}
-              }
-              
-              with open('${{ inputs.model }}_info.json', 'w') as f:
-                  json.dump(info, f, indent=2)
-              
-              print(json.dumps(info, indent=2))
-          else:
-              print(f'Warning: {model_file} not found, skipping info generation')
-          "
+          python << 'PYTHON_SCRIPT'
+from pathlib import Path
+import json
+
+model_file = '${{ inputs.model }}.onnx'
+if Path(model_file).exists():
+    file_size_mb = Path(model_file).stat().st_size / (1024 * 1024)
+    
+    # Convert string booleans to Python booleans
+    dynamic = '${{ inputs.dynamic }}' == 'true'
+    simplify = '${{ inputs.simplify }}' == 'true'
+    half = '${{ inputs.half }}' == 'true'
+    nms = '${{ inputs.nms }}' == 'true'
+    
+    info = {
+        'model': '${{ inputs.model }}',
+        'format': 'onnx',
+        'file_size_mb': round(file_size_mb, 2),
+        'imgsz': '${{ inputs.imgsz }}',
+        'dynamic': dynamic,
+        'simplify': simplify,
+        'half': half,
+        'nms': nms
+    }
+    
+    with open('${{ inputs.model }}_info.json', 'w') as f:
+        json.dump(info, f, indent=2)
+    
+    print(json.dumps(info, indent=2))
+else:
+    print(f'Warning: {model_file} not found, skipping info generation')
+PYTHON_SCRIPT
 
       - name: Upload ONNX artifact
         uses: actions/upload-artifact@v7
