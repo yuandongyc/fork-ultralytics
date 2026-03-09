@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: ${{ fromJson(format('[{0}]', inputs.models)) }}
+        model: ${{ fromJSON(format('["{0}"]', replace(inputs.models || 'yolo26n', ',', '\",\"'))) }}
         include:
           - model: yolo26n
             imgsz: 640
@@ -159,24 +159,27 @@ jobs:
           import json
           
           model_file = '${{ matrix.model }}.onnx'
-          file_size_mb = Path(model_file).stat().st_size / (1024 * 1024)
-          
-          info = {
-              'model': '${{ matrix.model }}',
-              'format': 'onnx',
-              'file_size_mb': round(file_size_mb, 2),
-              'imgsz': '${{ inputs.imgsz }}',
-              'dynamic': ${{ inputs.dynamic }},
-              'simplify': ${{ inputs.simplify }},
-              'half': ${{ inputs.half }},
-              'nms': ${{ inputs.nms }},
-              'batch': ${{ inputs.batch }}
-          }
-          
-          with open('${{ matrix.model }}_info.json', 'w') as f:
-              json.dump(info, f, indent=2)
-          
-          print(json.dumps(info, indent=2))
+          if Path(model_file).exists():
+              file_size_mb = Path(model_file).stat().st_size / (1024 * 1024)
+              
+              info = {
+                  'model': '${{ matrix.model }}',
+                  'format': 'onnx',
+                  'file_size_mb': round(file_size_mb, 2),
+                  'imgsz': '${{ inputs.imgsz }}',
+                  'dynamic': ${{ inputs.dynamic }},
+                  'simplify': ${{ inputs.simplify }},
+                  'half': ${{ inputs.half }},
+                  'nms': ${{ inputs.nms }},
+                  'batch': '${{ inputs.batch }}'
+              }
+              
+              with open('${{ matrix.model }}_info.json', 'w') as f:
+                  json.dump(info, f, indent=2)
+              
+              print(json.dumps(info, indent=2))
+          else:
+              print(f'Warning: {model_file} not found, skipping info generation')
           "
 
       - name: Upload ONNX artifact
@@ -202,9 +205,16 @@ jobs:
           echo "- **Batch Size**: ${{ inputs.batch }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Model Information" >> $GITHUB_STEP_SUMMARY
-          echo '```json' >> $GITHUB_STEP_SUMMARY
-          cat ${{ matrix.model }}_info.json >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ -f "${{ matrix.model }}_info.json" ]; then
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat ${{ matrix.model }}_info.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Model info file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Prune uv cache
+        run: uv cache prune --ci
 
   build-matrix:
     if: github.event_name == 'push' || github.event_name == 'schedule'
