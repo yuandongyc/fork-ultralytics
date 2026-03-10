@@ -153,6 +153,16 @@ def screen_detection_demo():
             # 后处理
             boxes, scores, class_ids = postprocess_output(outputs[0])
             
+            # 缩放边界框到屏幕尺寸
+            screen_h, screen_w = screenshot.shape[:2]
+            scale_x = screen_w / 640.0
+            scale_y = screen_h / 640.0
+            
+            boxes[:, 0] *= scale_x  # x1
+            boxes[:, 1] *= scale_y  # y1
+            boxes[:, 2] *= scale_x  # x2
+            boxes[:, 3] *= scale_y  # y2
+            
             # 绘制结果
             display_image = screenshot.copy()
             draw_detections(display_image, boxes, scores, class_ids, class_names)

@@ -85,7 +85,9 @@ def test_onnx_runtime():
     
     # 配置
     model_path = Path(r"D:\MyProjects\c_projects\fork-ultralytics\models\yolo26n-onnx\yolo26n.onnx")
-    test_image_path = Path(r"D:\MyProjects\c_projects\fork-ultralytics\ultralytics\assets\zidane.jpg")
+    # test_image_path = Path(r"D:\MyProjects\c_projects\fork-ultralytics\ultralytics\assets\zidane.jpg")
+    # test_image_path = Path(r"D:\MyProjects\c_projects\fork-ultralytics\ultralytics\assets\bus.jpg")
+    test_image_path = Path(r"D:\MyProjects\c_projects\fork-ultralytics\ultralytics\assets\test_1.jpg")
     output_path = Path(r"D:\MyProjects\c_projects\fork-ultralytics\my-tests\onnxruntime_result.jpg")
     
     # COCO 类别名称（前80个）
@@ -168,6 +170,16 @@ def test_onnx_runtime():
     # 后处理
     print("📊 后处理输出...")
     boxes, scores, class_ids = postprocess_output(outputs[0])
+    
+    # 缩放边界框到原始图像尺寸
+    scale_x = original_w / 640.0
+    scale_y = original_h / 640.0
+    
+    boxes[:, 0] *= scale_x  # x1
+    boxes[:, 1] *= scale_y  # y1
+    boxes[:, 2] *= scale_x  # x2
+    boxes[:, 3] *= scale_y  # y2
+    
     print(f"✅ 检测到 {len(boxes)} 个目标")
     print()
     
