@@ -1,0 +1,10 @@
+{
+  "model": "yolo26n",
+  "format": "onnx",
+  "file_size_mb": 9.48,
+  "imgsz": "640",
+  "dynamic": false,
+  "simplify": true,
+  "half": false,
+  "nms": false
+}
