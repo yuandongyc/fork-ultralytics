@@ -43,7 +43,7 @@ def postprocess_output(output, conf_threshold=0.25):
     class_ids = class_ids[mask]
     
     if len(boxes) == 0:
-        return [], [], []
+        return np.array([]), np.array([]), np.array([])
     
     # 过滤无效的边界框
     valid_mask = (boxes[:, 0] >= 0) & (boxes[:, 1] >= 0) & \
@@ -54,7 +54,7 @@ def postprocess_output(output, conf_threshold=0.25):
     class_ids = class_ids[valid_mask]
     
     if len(boxes) == 0:
-        return [], [], []
+        return np.array([]), np.array([]), np.array([])
     
     return boxes, confidences, class_ids
 
@@ -172,13 +172,14 @@ def test_onnx_runtime():
     boxes, scores, class_ids = postprocess_output(outputs[0])
     
     # 缩放边界框到原始图像尺寸
-    scale_x = original_w / 640.0
-    scale_y = original_h / 640.0
-    
-    boxes[:, 0] *= scale_x  # x1
-    boxes[:, 1] *= scale_y  # y1
-    boxes[:, 2] *= scale_x  # x2
-    boxes[:, 3] *= scale_y  # y2
+    if len(boxes) > 0:
+        scale_x = original_w / 640.0
+        scale_y = original_h / 640.0
+        
+        boxes[:, 0] *= scale_x  # x1
+        boxes[:, 1] *= scale_y  # y1
+        boxes[:, 2] *= scale_x  # x2
+        boxes[:, 3] *= scale_y  # y2
     
     print(f"✅ 检测到 {len(boxes)} 个目标")
     print()

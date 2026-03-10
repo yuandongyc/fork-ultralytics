@@ -31,7 +31,7 @@ def postprocess_output(output, conf_threshold=0.25):
     class_ids = class_ids[mask]
     
     if len(boxes) == 0:
-        return [], [], []
+        return np.array([]), np.array([]), np.array([])
     
     valid_mask = (boxes[:, 0] >= 0) & (boxes[:, 1] >= 0) & \
                  (boxes[:, 2] > boxes[:, 0]) & (boxes[:, 3] > boxes[:, 1])
@@ -41,7 +41,7 @@ def postprocess_output(output, conf_threshold=0.25):
     class_ids = class_ids[valid_mask]
     
     if len(boxes) == 0:
-        return [], [], []
+        return np.array([]), np.array([]), np.array([])
     
     return boxes, confidences, class_ids
 
@@ -154,14 +154,15 @@ def screen_detection_demo():
             boxes, scores, class_ids = postprocess_output(outputs[0])
             
             # 缩放边界框到屏幕尺寸
-            screen_h, screen_w = screenshot.shape[:2]
-            scale_x = screen_w / 640.0
-            scale_y = screen_h / 640.0
-            
-            boxes[:, 0] *= scale_x  # x1
-            boxes[:, 1] *= scale_y  # y1
-            boxes[:, 2] *= scale_x  # x2
-            boxes[:, 3] *= scale_y  # y2
+            if len(boxes) > 0:
+                screen_h, screen_w = screenshot.shape[:2]
+                scale_x = screen_w / 640.0
+                scale_y = screen_h / 640.0
+                
+                boxes[:, 0] *= scale_x  # x1
+                boxes[:, 1] *= scale_y  # y1
+                boxes[:, 2] *= scale_x  # x2
+                boxes[:, 3] *= scale_y  # y2
             
             # 绘制结果
             display_image = screenshot.copy()
